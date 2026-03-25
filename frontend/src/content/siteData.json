@@ -1,0 +1,125 @@
+{
+  "site": {
+    "title": {
+      "en": "FinScopeMX",
+      "es": "FinScopeMX"
+    },
+    "tagline": {
+      "en": "Mexican Stock Market Intelligence",
+      "es": "Inteligencia del Mercado Bursatil Mexicano"
+    },
+    "disclaimer": {
+      "en": "Educational purposes only. Not financial advice. Past performance does not guarantee future results.",
+      "es": "Solo con fines educativos. No es asesoramiento financiero. El rendimiento pasado no garantiza resultados futuros."
+    }
+  },
+  "dashboard": {
+    "pageTitle": {
+      "en": "Market Overview",
+      "es": "Resumen del Mercado"
+    },
+    "pageSubtitle": {
+      "en": "Live data · 15 BMV instruments",
+      "es": "Datos actualizados · 15 instrumentos de la BMV"
+    },
+    "metrics": {
+      "bestScore": { "en": "Best Score Today", "es": "Mejor Score Hoy" },
+      "topGainer": { "en": "Top Gainer (30d)", "es": "Mayor Alza (30d)" },
+      "topLoser": { "en": "Top Loser (30d)", "es": "Mayor Baja (30d)" },
+      "loadedInstruments": { "en": "Loaded Instruments", "es": "Instrumentos Cargados" },
+      "historyYears": { "en": "1 year of history", "es": "1 ano de historia" }
+    },
+    "rankings": {
+      "title": { "en": "Rankings Table", "es": "Tabla de Rankings" },
+      "subtitle": { "en": "Score computed with weighted Min-Max · RSI, Volatility, Return, SMA-200", "es": "Score calculado con Min-Max ponderado · RSI, Volatilidad, Retorno, SMA-200" },
+      "instrument": { "en": "Instrument", "es": "Instrumento" },
+      "return30d": { "en": "Ret. 30d", "es": "Ret. 30d" },
+      "return90d": { "en": "Ret. 90d", "es": "Ret. 90d" },
+      "annualVol": { "en": "Ann. Vol.", "es": "Vol. Anual." },
+      "score": { "en": "Score", "es": "Score" }
+    },
+    "globalInstruments": {
+      "title": { "en": "Global Instruments", "es": "Instrumentos Globales" },
+      "description": { "en": "Assets related to the Mexican market. Click to request a download.", "es": "Activos relacionados con el mercado mexicano. Haz clic para solicitar descarga." }
+    }
+  },
+  "game": {
+    "pageTitle": {
+      "en": "Blind Paper Trading",
+      "es": "Blind Paper Trading"
+    },
+    "pageSubtitle": {
+      "en": "Forecast without seeing the future",
+      "es": "Pronostica sin ver el futuro"
+    },
+    "instructions": {
+      "en": "Observe the last 60 days (blinded) and make up to 5 predictions for the next 30 days",
+      "es": "Observa los ultimos 60 dias (ciegos) y haz hasta 5 predicciones para los proximos 30 dias"
+    },
+    "chartHint": {
+      "en": "The chart shows 60 days of history without dates or asset name. You only see the price movement.",
+      "es": "El grafico muestra 60 dias de historia sin fechas ni nombre del activo. Solo ves el movimiento del precio."
+    },
+    "buttonStart": { "en": "Start Game", "es": "Iniciar Juego" },
+    "buttonSubmit": { "en": "Submit", "es": "Enviar" },
+    "buttonClear": { "en": "Clear", "es": "Limpiar" },
+    "buttonPlayAgain": { "en": "Play Again", "es": "Jugar de nuevo" },
+    "predictionsLabel": { "en": "Your Predictions", "es": "Tus Predicciones" },
+    "remainingHint": { "en": "predictions remaining", "es": "predicciones restantes" },
+    "scoreLabel": { "en": "Score", "es": "Puntuacion" },
+    "loginPrompt": {
+      "title": { "en": "Login / Register to continue playing", "es": "Iniciar sesion / Registrarse para seguir jugando" },
+      "message": {
+        "en": "You have used all 3 guest plays. Create an account to continue playing with leaderboards and persistent scores!",
+        "es": "Has usado las 3 jugadas de invitado. Crea una cuenta para seguir jugando con tablas de posiciones y puntuaciones persistentes."
+      }
+    },
+    "roundsLabel": { "en": "Free rounds remaining", "es": "Rondas gratuitas restantes" },
+    "roundsAvailable": { "en": "2 of 3 available", "es": "2 de 3 disponibles" },
+    "gameButton": { "en": "Play now", "es": "Jugar ahora" }
+  },
+  "tickers": [
+    "WALMEX.MX",
+    "GMEXICOB.MX",
+    "CEMEXCPO.MX",
+    "AMXB.MX",
+    "GFNORTEO.MX",
+    "FEMSAUBD.MX",
+    "KOFUBL.MX",
+    "GAPB.MX",
+    "ASURB.MX",
+    "OMAB.MX",
+    "BIMBOA.MX",
+    "AC.MX",
+    "GRUMAB.MX",
+    "TLEVISACPO.MX",
+    "MFRISCOA.MX",
+    "GC=F",
+    "SI=F",
+    "^IXIC",
+    "^GSPC",
+    "BTC-USD"
+  ],
+  "tickerNames": {
+    "WALMEX.MX": { "en": "Walmart de Mexico", "es": "Walmart de Mexico" },
+    "GMEXICOB.MX": { "en": "Grupo Mexico", "es": "Grupo Mexico" },
+    "CEMEXCPO.MX": { "en": "CEMEX", "es": "CEMEX" },
+    "AMXB.MX": { "en": "America Movil", "es": "America Movil" },
+    "GFNORTEO.MX": { "en": "Banorte", "es": "Banorte" },
+    "FEMSAUBD.MX": { "en": "FEMSA", "es": "FEMSA" },
+    "KOFUBL.MX": { "en": "Coca-Cola FEMSA", "es": "Coca-Cola FEMSA" },
+    "GAPB.MX": { "en": "GAP", "es": "Grupo Aeroportuario del Pacifico" },
+    "ASURB.MX": { "en": "ASUR", "es": "Grupo Aeroportuario del Sureste" },
+    "OMAB.MX": { "en": "OMA", "es": "Grupo Aeroportuario Centro Norte" },
+    "BIMBOA.MX": { "en": "Bimbo", "es": "Grupo Bimbo" },
+    "AC.MX": { "en": "Arca Continental", "es": "Arca Continental" },
+    "GRUMAB.MX": { "en": "Grupo Mexico", "es": "Grupo Mexico" },
+    "TLEVISACPO.MX": { "en": "Telvis", "es": "Televisa" },
+    "MFRISCOA.MX": { "en": "Grupo Carso", "es": "Grupo Carso" },
+    "GC=F": { "en": "Gold Futures", "es": "Futuros del Oro" },
+    "SI=F": { "en": "Silver Futures", "es": "Futuros de la Plata" },
+    "^IXIC": { "en": "NASDAQ Composite", "es": "NASDAQ Composite" },
+    "^GSPC": { "en": "S&P 500", "es": "S&P 500" },
+    "BTC-USD": { "en": "Bitcoin", "es": "Bitcoin" }
+  }
+}

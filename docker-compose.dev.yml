@@ -1,0 +1,44 @@
+# docker-compose.dev.yml
+# Local development overrides.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Changes from production:
+#   - Exposes PostgreSQL and Redis ports to localhost for direct access
+#   - Removes internal: true from backend_network (worker needs Yahoo Finance)
+#   - Mounts source code as volumes for hot reload
+#   - Overrides backend CMD to use uvicorn --reload
+#   - Uses .env file from disk instead of Coolify injection
+
+services:
+
+  db:
+    ports:
+      - "5433:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  backend:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+
+  worker:
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+
+  frontend:
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    env_file:
+      - ./frontend/.env
+
+networks:
+  backend_network:
+    internal: false
