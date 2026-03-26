@@ -93,7 +93,7 @@ services:
       - finscope_network
 
   # ── 5. React Frontend (Nginx SPA) ─────────────────────────────
-frontend:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -103,16 +103,17 @@ frontend:
     restart: always
     expose:
       - "80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`finscopemx.revolution505.com`)"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       - "traefik.http.routers.frontend.entrypoints=websecure"
-      # Descomenta estas líneas si quieres redirección automática HTTP → HTTPS
-      # - "traefik.http.routers.frontend-http.rule=Host(`finscopemx.revolution505.com`)"
-      # - "traefik.http.routers.frontend-http.entrypoints=web"
-      # - "traefik.http.routers.frontend-http.middlewares=redirect-to-https"
-      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
     networks:
       - finscope_network
     depends_on:
