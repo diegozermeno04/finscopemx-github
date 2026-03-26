@@ -109,11 +109,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`finscopemx.revolution505.com`)"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
     networks:
       - finscope_network
     depends_on:
