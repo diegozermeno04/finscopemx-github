@@ -8,6 +8,8 @@ services:
   # ── 1. PostgreSQL ──────────────────────────────────────────────
   db:
     image: postgres:15-alpine
+    ports:                 # <-- AGREGA ESTA LÍNEA
+      - "54320:5432"
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
