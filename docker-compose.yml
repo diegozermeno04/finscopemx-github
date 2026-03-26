@@ -101,6 +101,8 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
         VITE_APP_ENV: ${VITE_APP_ENV}
     restart: always
+    expose: 
+      - "80"
     networks:
       - finscope_network
     depends_on:
