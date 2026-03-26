@@ -4,37 +4,41 @@ import socket as _socket
 import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
-
 _orig_getaddrinfo = _socket.getaddrinfo
-
-
 def _force_ipv4(host, port, family=0, type=0, proto=0, flags=0):
     return _orig_getaddrinfo(host, port, _socket.AF_INET, type, proto, flags)
-
-
 _socket.getaddrinfo = _force_ipv4
-
 import yfinance as yf
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 import os
-
 from app.core.models import ETLError, ETLRun, HistoricalPrice
-
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-
 CORE_TICKERS = [
-    "AC.MX", "AMX", "ASURB.MX", "CEMEXCPO.MX", "FEMSAUBD.MX",
-    "GAPB.MX", "GFNORTEO.MX", "GMEXICOB.MX", "PENOLES.MX", "WALMEX.MX",
+    "WALMEX.MX",
+    "GMEXICOB.MX",
+    "CEMEXCPO.MX",
+    "AMXB.MX",
+    "GFNORTEO.MX",
+    "FEMSAUBD.MX",
+    "KOFUBL.MX",
+    "GAPB.MX",
+    "ASURB.MX",
+    "OMAB.MX",
+    "BIMBOA.MX",
+    "AC.MX",
+    "GRUMAB.MX",
+    "TLEVISACPO.MX",
+    "KIMBER.MX",
 ]
-
 CHUNK_YEARS = 2
-MIN_SLEEP_CHUNK = 8
-MAX_SLEEP_CHUNK = 15
-MIN_SLEEP_TICKER = 45
-MAX_SLEEP_TICKER = 90
-
+MIN_SLEEP_CHUNK = 12
+MAX_SLEEP_CHUNK = 20
+MIN_SLEEP_TICKER = 60
+MAX_SLEEP_TICKER = 120
+MAX_RETRIES = 3
+RETRY_DELAY_BASE = 30
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -45,38 +49,68 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.5",
     "Accept-Encoding": "gzip, deflate, br",
     "Connection": "keep-alive",
+    "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
 }
-
-
+_yf_session = None
+def _get_yf_session():
+    global _yf_session
+    if _yf_session is None:
+        _yf_session = yf.Ticker(" ")
+        _yf_session.history(period="1d", timeout=10)
+    return _yf_session
 def _warm_up_yahoo():
     try:
         from curl_cffi import requests as curl_requests
         s = curl_requests.Session(impersonate="chrome120")
-        s.get("https://fc.yahoo.com", timeout=10)
-        s.get("https://finance.yahoo.com", timeout=10)
-    except Exception:
-        pass
-
-
-def _download_chunk(ticker: str, start: date, end: date) -> Optional[object]:
+        s.get("https://fc.yahoo.com", timeout=15)
+        s.get("https://finance.yahoo.com", timeout=15)
+        s.get("https://query1.finance.yahoo.com/v1/finance/quote?symbols=AC.MX", timeout=15)
+    except Exception as e:
+        print(f"  Warm-up warning: {e}")
+def _download_chunk(ticker: str, start: date, end: date, retry_count: int = 0) -> Optional[object]:
     try:
         _warm_up_yahoo()
-        time.sleep(random.uniform(1, 3))
-
+        time.sleep(random.uniform(2, 5))
         t = yf.Ticker(ticker)
         df = t.history(
             start=start.isoformat(),
             end=end.isoformat(),
             auto_adjust=False,
             actions=False,
+            timeout=30,
         )
-        return df if not df.empty else None
+        if df is None or df.empty:
+            if retry_count < MAX_RETRIES:
+                wait_time = RETRY_DELAY_BASE * (2 ** retry_count)
+                print(f"  Retry {retry_count + 1}/{MAX_RETRIES} for {ticker} after {wait_time}s...")
+                time.sleep(wait_time)
+                return _download_chunk(ticker, start, end, retry_count + 1)
+            return None
+        if "Date" in df.columns or df.index.empty:
+            if retry_count < MAX_RETRIES:
+                wait_time = RETRY_DELAY_BASE * (2 ** retry_count)
+                print(f"  Empty data, retry {retry_count + 1}/{MAX_RETRIES} for {ticker} after {wait_time}s...")
+                time.sleep(wait_time)
+                return _download_chunk(ticker, start, end, retry_count + 1)
+            return None
+        return df
     except Exception as exc:
-        raise RuntimeError(
-            f"yfinance download failed for {ticker}: {exc}"
-        ) from exc
-
-
+        error_msg = str(exc)
+        if "Expecting value" in error_msg or "JSONDecodeError" in error_msg or "No data found" in error_msg:
+            if retry_count < MAX_RETRIES:
+                wait_time = RETRY_DELAY_BASE * (2 ** retry_count)
+                print(f"  Yahoo API error for {ticker}: {error_msg}")
+                print(f"  Retry {retry_count + 1}/{MAX_RETRIES} after {wait_time}s...")
+                time.sleep(wait_time)
+                return _download_chunk(ticker, start, end, retry_count + 1)
+        raise RuntimeError(f"yfinance download failed for {ticker}: {exc}") from exc
 def _validate_row(row) -> Optional[str]:
     try:
         h = float(row.get("High") or 0)
@@ -85,7 +119,6 @@ def _validate_row(row) -> Optional[str]:
         v = int(row.get("Volume") or 0)
     except (TypeError, ValueError) as exc:
         return f"Type conversion error: {exc}"
-
     if c <= 0:
         return f"Close price is zero or negative: {c}"
     if h > 0 and l > 0 and h < l:
@@ -93,8 +126,6 @@ def _validate_row(row) -> Optional[str]:
     if v < 0:
         return f"Volume is negative: {v}"
     return None
-
-
 async def fetch_ticker_chunked(
     ticker: str,
     years: int = 20,
@@ -104,10 +135,8 @@ async def fetch_ticker_chunked(
     async_session = sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
-
     end_date = date.today()
     start_date = end_date.replace(year=end_date.year - years)
-
     chunk_starts = []
     current = start_date
     while current < end_date:
@@ -119,10 +148,8 @@ async def fetch_ticker_chunked(
             current = current.replace(year=new_year)
         except ValueError:
             current = current.replace(year=new_year, day=28)
-
     rows_inserted = 0
     rows_failed = 0
-
     async with async_session() as session:
         for i, chunk_start in enumerate(chunk_starts):
             try:
@@ -135,7 +162,6 @@ async def fetch_ticker_chunked(
                 )
             except ValueError:
                 chunk_end = end_date
-
             try:
                 df = await asyncio.get_event_loop().run_in_executor(
                     None, _download_chunk, ticker, chunk_start, chunk_end
@@ -153,18 +179,16 @@ async def fetch_ticker_chunked(
                         )
                     )
                     await session.commit()
-                time.sleep(random.uniform(MIN_SLEEP_CHUNK, MAX_SLEEP_CHUNK))
+                wait_time = random.uniform(MIN_SLEEP_CHUNK, MAX_SLEEP_CHUNK)
+                time.sleep(wait_time)
                 continue
-
             if df is None:
-                time.sleep(random.uniform(MIN_SLEEP_CHUNK, MAX_SLEEP_CHUNK))
+                wait_time = random.uniform(MIN_SLEEP_CHUNK, MAX_SLEEP_CHUNK)
+                time.sleep(wait_time)
                 continue
-
             adj_col = "Adj Close" if "Adj Close" in df.columns else "Close"
-
             for idx, row in df.iterrows():
                 row_date = idx.date() if hasattr(idx, "date") else idx
-
                 validation_error = _validate_row(row)
                 if validation_error:
                     rows_failed += 1
@@ -182,7 +206,6 @@ async def fetch_ticker_chunked(
                             )
                         )
                     continue
-
                 await session.execute(
                     text("""
                         INSERT INTO historical_prices
@@ -211,9 +234,7 @@ async def fetch_ticker_chunked(
                     },
                 )
                 rows_inserted += 1
-
             await session.commit()
-
             if i < len(chunk_starts) - 1:
                 sleep_time = random.uniform(MIN_SLEEP_CHUNK, MAX_SLEEP_CHUNK)
                 print(
@@ -222,7 +243,6 @@ async def fetch_ticker_chunked(
                     f"Sleeping {sleep_time:.1f}s"
                 )
                 time.sleep(sleep_time)
-
     await engine.dispose()
     print(
         f"[{ticker}] complete: {rows_inserted} inserted, "
@@ -233,14 +253,11 @@ async def fetch_ticker_chunked(
         "rows_inserted": rows_inserted,
         "rows_failed": rows_failed,
     }
-
-
 async def run_full_etl(years: int = 20) -> dict:
     engine = create_async_engine(DATABASE_URL, echo=False)
     async_session = sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
-
     async with async_session() as session:
         etl_run = ETLRun(
             run_type="manual",
@@ -251,26 +268,25 @@ async def run_full_etl(years: int = 20) -> dict:
         await session.commit()
         await session.refresh(etl_run)
         etl_run_id = etl_run.id
-
     total_inserted = 0
     total_failed = 0
-
+    print("\n" + "=" * 60)
+    print(f"Starting Full ETL - {len(CORE_TICKERS)} tickers, {years} years")
+    print("=" * 60 + "\n")
     for i, ticker in enumerate(CORE_TICKERS):
-        print(f"\nProcessing {ticker} ({i+1}/{len(CORE_TICKERS)})")
+        print(f"\n[{i+1}/{len(CORE_TICKERS)}] Processing: {ticker}")
         result = await fetch_ticker_chunked(
             ticker, years=years, etl_run_id=etl_run_id
         )
         total_inserted += result["rows_inserted"]
         total_failed += result["rows_failed"]
-
         if i < len(CORE_TICKERS) - 1:
             sleep_time = random.uniform(MIN_SLEEP_TICKER, MAX_SLEEP_TICKER)
             print(f"Sleeping {sleep_time:.1f}s before next ticker")
             time.sleep(sleep_time)
-
     async with async_session() as session:
         result = await session.execute(
-            select(ETLRun).where(ETLRun.id == etl_run_id)
+            select(ETLError).where(ETLError.etl_run_id == etl_run_id)
         )
         etl_run = result.scalar_one()
         etl_run.status = "complete"
@@ -279,22 +295,21 @@ async def run_full_etl(years: int = 20) -> dict:
         etl_run.rows_failed = total_failed
         etl_run.completed_at = datetime.now(timezone.utc)
         await session.commit()
-
     await engine.dispose()
+    print("\n" + "=" * 60)
+    print(f"ETL Complete: {total_inserted} inserted, {total_failed} failed")
+    print("=" * 60)
     return {
         "etl_run_id": etl_run_id,
         "tickers_processed": len(CORE_TICKERS),
         "total_inserted": total_inserted,
         "total_failed": total_failed,
     }
-
-
 async def run_incremental_etl() -> dict:
     engine = create_async_engine(DATABASE_URL, echo=False)
     async_session = sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
-
     async with async_session() as session:
         etl_run = ETLRun(
             run_type="scheduled",
@@ -305,12 +320,10 @@ async def run_incremental_etl() -> dict:
         await session.commit()
         await session.refresh(etl_run)
         etl_run_id = etl_run.id
-
     end_date = date.today()
     start_date = end_date - timedelta(days=7)
     total_inserted = 0
     total_failed = 0
-
     for ticker in CORE_TICKERS:
         try:
             df = await asyncio.get_event_loop().run_in_executor(
@@ -318,9 +331,7 @@ async def run_incremental_etl() -> dict:
             )
             if df is None:
                 continue
-
             adj_col = "Adj Close" if "Adj Close" in df.columns else "Close"
-
             async with async_session() as session:
                 for idx, row in df.iterrows():
                     row_date = idx.date() if hasattr(idx, "date") else idx
@@ -353,16 +364,13 @@ async def run_incremental_etl() -> dict:
                     )
                     total_inserted += 1
                 await session.commit()
-
-            time.sleep(random.uniform(3, 8))
-
+            time.sleep(random.uniform(10, 20))
         except Exception as exc:
             total_failed += 1
             print(f"[incremental] {ticker} failed: {exc}")
-
     async with async_session() as session:
         result = await session.execute(
-            select(ETLRun).where(ETLRun.id == etl_run_id)
+            select(ETLError).where(ETLError.etl_run_id == etl_run_id)
         )
         etl_run = result.scalar_one()
         etl_run.status = "complete"
@@ -371,7 +379,6 @@ async def run_incremental_etl() -> dict:
         etl_run.rows_failed = total_failed
         etl_run.completed_at = datetime.now(timezone.utc)
         await session.commit()
-
     await engine.dispose()
     return {
         "etl_run_id": etl_run_id,
