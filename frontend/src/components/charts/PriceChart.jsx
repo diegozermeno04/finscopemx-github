@@ -38,11 +38,13 @@ export default function PriceChart({ data, height = 300, mode = 'intermediate' }
       const chart = createChart(containerRef.current, {
         layout: {
           background: { type: ColorType.Solid, color: 'transparent' },
-          textColor: '#8a8fa8',
+          // COLOR ACTUALIZADO A LIGHT MODE:
+          textColor: '#5a5f70', 
         },
         grid: {
-          vertLines: { color: 'rgba(255,255,255,0.05)' },
-          horzLines: { color: 'rgba(255,255,255,0.05)' },
+          // COLORES ACTUALIZADOS A LIGHT MODE:
+          vertLines: { color: 'rgba(0,0,0,0.05)' },
+          horzLines: { color: 'rgba(0,0,0,0.05)' },
         },
         width: containerRef.current.clientWidth,
         height: height,
