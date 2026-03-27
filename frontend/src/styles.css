@@ -1,20 +1,5 @@
 :root {
-  --arma-a: #8FBC8F;
-  --arma-b: #483D8B;
-  --arma-c: #2F4F4F;
-  --arma-d: #DAA520;
-  --arma-b-light: rgba(72,61,139,0.12);
-  --arma-d-light: rgba(218,165,32,0.15);
-  --bg-dark: #0f1117;
-  --bg-card: #1a1d27;
-  --bg-card2: #1e2130;
-  --border-col: rgba(255,255,255,0.08);
-  --text-main: #e8eaf0;
-  --text-muted: #8a8fa8;
-  --text-accent: #a89de8;
-}
-
-.light-mode {
+  /* LIGHT MODE (Ahora por defecto para el proyector) */
   --bg-dark: #e8e9ed;
   --bg-card: #ffffff;
   --bg-card2: #f5f6f9;
@@ -28,6 +13,23 @@
   --arma-d: #b89020;
   --arma-b-light: rgba(56,50,107,0.1);
   --arma-d-light: rgba(184,144,32,0.12);
+}
+
+.dark-mode {
+  /* DARK MODE (Guardado por si quieres regresar a él después de la presentación) */
+  --arma-a: #8FBC8F;
+  --arma-b: #483D8B;
+  --arma-c: #2F4F4F;
+  --arma-d: #DAA520;
+  --arma-b-light: rgba(72,61,139,0.12);
+  --arma-d-light: rgba(218,165,32,0.15);
+  --bg-dark: #0f1117;
+  --bg-card: #1a1d27;
+  --bg-card2: #1e2130;
+  --border-col: rgba(255,255,255,0.08);
+  --text-main: #e8eaf0;
+  --text-muted: #8a8fa8;
+  --text-accent: #a89de8;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
